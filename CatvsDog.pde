@@ -1,35 +1,42 @@
+PImage menuImg, chooseImg, bgImg;
+PImage dogImg, catImg;
+PImage[] icons = new PImage[8];
 PFont font;
-PImage menuImg, chooseImg, dogImg, catImg;
-String state = "menu"; // can be "menu", "mode-select", "oneplayer", "twoplayer"
+String state = "menu";
 
 void setup() {
   size(1000, 600);
   font = createFont("Arial", 32, true);
   textFont(font);
 
-  // Load all images at once
   menuImg = loadImage("menu.png");
   chooseImg = loadImage("choose.png");
-  dogImg = loadImage("dog.png");
-  catImg = loadImage("dogCat.png");
+  bgImg = loadImage("bg.png");
+  dogImg = loadImage("dogstart.png");
+  catImg = loadImage("catstart.png");
+
+  icons[0] = loadImage("x2.png");
+  icons[1] = loadImage("power.png");
+  icons[2] = loadImage("bomb.png");
+  icons[3] = loadImage("heal.png");
+  icons[4] = loadImage("x2.png");
+  icons[5] = loadImage("power.png");
+  icons[6] = loadImage("bomb.png");
+  icons[7] = loadImage("heal.png");
 }
 
 void draw() {
   background(0);
-
   if (state.equals("menu")) {
     image(menuImg, 0, 0, width, height);
     drawMenuButtons();
-  } 
-  else if (state.equals("mode-select")) {
+  } else if (state.equals("mode-select")) {
     image(chooseImg, 0, 0, width, height);
     drawModeSelectUI();
-  } 
-  else if (state.equals("oneplayer")) {
-    drawOnePlayerScreen();
-  } 
-  else if (state.equals("twoplayer")) {
+  } else if (state.equals("twoplayer")) {
     drawTwoPlayerScreen();
+  } else if (state.equals("oneplayer")) {
+    drawOnePlayerScreen();
   }
 }
 
@@ -65,11 +72,11 @@ void drawModeSelectUI() {
 
   if (hover1P) tint(245, 160, 159, 350);
   else noTint();
-  image(dogImg, dogX, dogY, dogW, dogH);
+  image(loadImage("dog.png"), dogX, dogY, dogW, dogH);
 
   if (hover2P) tint(245, 160, 159, 350);
   else noTint();
-  image(catImg, catX, catY, catW, catH);
+  image(loadImage("dogCat.png"), catX, catY, catW, catH);
 
   PFont boldFont = createFont("Arial Bold", 32, true);
   textFont(boldFont);
@@ -90,20 +97,42 @@ void drawModeSelectUI() {
   noTint();
 }
 
+void drawTwoPlayerScreen() {
+  image(bgImg, 0, 0, width, height);
+  image(catImg, 22, 363, 120, 110);
+  image(dogImg, 810, 420, 150, 150);
+
+
+  fill(255, 0, 0);
+  rect(150, 40, 300, 20);
+  rect(550, 40, 300, 20);
+
+  fill(255, 255, 0);
+  rect(390, 40, 220, 20);
+
+  fill(0);
+  textAlign(CENTER, CENTER);
+  textSize(16);
+  text("WIND", width / 2, 30);
+
+  for (int i = 0; i < 4; i++) {
+    image(icons[i], 50 + i * 60, 80, 50, 50);
+  }
+  for (int i = 4; i < 8; i++) {
+    image(icons[i], 1000 - (8 - i) * 60 - 50, 80, 50, 50);
+  }
+ //fill(0);
+//textSize(20);
+//textAlign(CENTER, CENTER);
+//text("mouseX: " + mouseX + "   mouseY: " + mouseY, width / 2, 40);
+}
+
 void drawOnePlayerScreen() {
   background(200, 255, 200);
   textSize(36);
   textAlign(CENTER, CENTER);
   fill(0);
   text("🐶 One Player Game Screen", width / 2, height / 2);
-}
-
-void drawTwoPlayerScreen() {
-  background(200, 200, 255);
-  textSize(36);
-  textAlign(CENTER, CENTER);
-  fill(0);
-  text("🐶🐱 Two Player Game Screen", width / 2, height / 2);
 }
 
 void mousePressed() {
