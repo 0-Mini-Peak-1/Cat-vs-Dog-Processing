@@ -2,6 +2,9 @@ public class ModeSelect extends PApplet {
   PFont font, boldFont;
   PImage modeSelectImg, dogImg, catImg;
 
+  int dogX = 300, dogY = 220, dogW = 130, dogH = 150;
+  int catX = 500, catY = 210, catW = 200, catH = 160;
+
   public void settings() {
     size(1000, 600);
   }
@@ -11,10 +14,8 @@ public class ModeSelect extends PApplet {
     boldFont = createFont("Arial Bold", 32, true);
     textFont(font);
     modeSelectImg = loadImage("choose.png");
-    println("Trying to load images...");
     dogImg = loadImage("dog.png");
     catImg = loadImage("dogCat.png");
-    modeSelectImg = loadImage("choose.png");
   }
 
   public void draw() {
@@ -22,14 +23,27 @@ public class ModeSelect extends PApplet {
     drawModeSelectUI();
   }
 
-  void drawModeSelectUI() {
-    int dogX = 300, dogY = 220, dogW = 130, dogH = 150;
-    int catX = 500, catY = 210, catW = 200, catH = 160;
+  public void mousePressed() {
+    // Check 1P
+    if (mouseX >= dogX && mouseX <= dogX + dogW &&
+        mouseY >= dogY && mouseY <= dogY + dogH) {
+      surface.setVisible(false); // Hide this window
+      OnePlayerGame.main("OnePlayerGame");
+    }
 
+    // Check 2P
+    if (mouseX >= catX && mouseX <= catX + catW &&
+        mouseY >= catY && mouseY <= catY + catH) {
+      surface.setVisible(false);
+      TwoPlayerGame.main("TwoPlayerGame");
+    }
+  }
+
+  void drawModeSelectUI() {
     boolean hover1P = mouseX >= dogX && mouseX <= dogX + dogW &&
-      mouseY >= dogY && mouseY <= dogY + dogH;
+                      mouseY >= dogY && mouseY <= dogY + dogH;
     boolean hover2P = mouseX >= catX && mouseX <= catX + catW &&
-      mouseY >= catY && mouseY <= catY + catH;
+                      mouseY >= catY && mouseY <= catY + catH;
 
     if (hover1P) tint(245, 160, 159, 350);
     else noTint();
@@ -53,6 +67,7 @@ public class ModeSelect extends PApplet {
     text("2 player", catX + catW / 2 + 2, catY + catH + 10 + 2);
     fill(0);
     text("2 player", catX + catW / 2, catY + catH + 10);
+
     noTint();
   }
 }
