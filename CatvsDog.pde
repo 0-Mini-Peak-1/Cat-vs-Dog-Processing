@@ -5,7 +5,7 @@ PImage dogImg, catImg;
 PImage boneImg, canImg; // Images for projectiles
 PImage[] icons = new PImage[8];
 PFont font;
-String state = "menu";
+String state = "twoplayer";
 boolean catTurn = true;
 float catHealth = 100;
 float dogHealth = 100;
@@ -25,7 +25,17 @@ Minim minim;
 AudioPlayer menuMusic;
 AudioPlayer inGameMusic;
 AudioPlayer hitSound;
-
+boolean[] catAbilities = {true, true, true, true};
+boolean[] dogAbilities = {true, true, true, true};
+int catDamageMultiplier = 1;
+int dogDamageMultiplier = 1;
+int catThrowCount = 0;
+int dogThrowCount = 0;
+boolean showTutorial = true;
+int tutorialStartTime = 0;
+int tutorialDuration = 7500; // 7.5 seconds
+boolean showGameOver = false;
+String winnerText = "";
 
 class Projectile {
   float x, y, vx, vy;
@@ -58,11 +68,11 @@ class Projectile {
     if (active) {
       // Use fixed dimensions for projectiles
       int projectileWidth = 100; // Set width
-      int projectileHeight = 100; // Set height
+      int projectileHeight = 50; // Set height
 
       // Draw the hitbox rectangle for testing
       fill(255, 0, 0);
-      
+
       image(img, x, y, projectileWidth, projectileHeight); // Use fixed size here
     }
   }
@@ -70,37 +80,32 @@ class Projectile {
 
   void checkCollision() {
     // Define the hitbox for the dog
-    float dogWidth = 150; // Width of the dog image
-    float dogHeight = 150; // Height of the dog image
-    float dogCenterX = 810 + dogWidth / 2; // Center X of the dog image
-    float dogCenterY = 420 + dogHeight / 2; // Center Y of the dog image
-    float dogHitboxSize = 100; // Adjust as needed for better coverage
+    float dogCenterX = 810 + 75; // X position of the dog
+    float dogCenterY = 420 + 75; // Y position of the dog
+    float dogHitboxSize = 100; // Radius for the dog detection
 
     // Define the hitbox for the cat
-    float catWidth = 120; // Width of the cat image
-    float catHeight = 110; // Height of the cat image
-    float catCenterX = 22 + catWidth / 2; // Center X of the cat image
-    float catCenterY = 363 + catHeight / 2; // Center Y of the cat image
-    float catHitboxSize = 100; // Adjust as needed
+    float catCenterX = 22 + 60; // X position of the cat
+    float catCenterY = 363 + 55; // Y position of the cat
+    float catHitboxSize = 100; // Radius for the cat detection
 
     // Check collision with the dog (when it's the cat's turn)
     if (catTurn && dist(x, y, dogCenterX, dogCenterY) < dogHitboxSize) {
-      dogHealth -= 20;
+      dogHealth -= 20 * catDamageMultiplier; // Calculate damage with multiplier
       active = false;
-      hitSound.rewind(); // Rewind the sound to play from the start
-      hitSound.play(); // Play the hit sound
+      hitSound.rewind();
+      hitSound.play();
       nextTurn();
     }
     // Check collision with the cat (when it's the dog's turn)
     else if (!catTurn && dist(x, y, catCenterX, catCenterY) < catHitboxSize) {
-      catHealth -= 20;
+      catHealth -= 20 * dogDamageMultiplier; // Calculate damage with multiplier
       active = false;
-      hitSound.rewind(); // Rewind the sound to play from the start
-      hitSound.play(); // Play the hit sound
+      hitSound.rewind();
+      hitSound.play();
       nextTurn();
     }
-}
-
+  }
 }
 
 
@@ -119,15 +124,12 @@ void setup() {
   boneImg = loadImage("bone.png");
   canImg = loadImage("can.png");
 
-  boneImg.resize(100, 100);
-  canImg.resize(100, 100);
-
-  icons[0] = loadImage("x2.png");
-  icons[1] = loadImage("power.png");
+  icons[0] = loadImage("power.png");
+  icons[1] = loadImage("heal.png");
   icons[2] = loadImage("bomb.png");
   icons[3] = loadImage("heal.png");
-  icons[4] = loadImage("x2.png");
-  icons[5] = loadImage("power.png");
+  icons[4] = loadImage("power.png");
+  icons[5] = loadImage("heal.png");
   icons[6] = loadImage("bomb.png");
   icons[7] = loadImage("heal.png");
 
@@ -264,39 +266,56 @@ void drawModeSelectUI() {
 }
 
 void drawTwoPlayerScreen() {
-  // Show background
+   // Show background
   image(bgImg, 0, 0, width, height);
+  if (showTutorial) {
+    int elapsed = millis() - tutorialStartTime;
+    if (elapsed > tutorialDuration) {
+      showTutorial = false;
+    } else {
+      // Draw semi-transparent black background
+      fill(0, 150); // Black with alpha
+      noStroke();
+      rect(0, 0, width, height);
+
+      // Tutorial text
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(24);
+      text("Welcome to Cat vs Dog.\nUse spacebar to charge and release to throw.\nEach player takes turns.\nFirst to deplete opponent's health wins!", width / 2, height / 2);
+    }
+  }
   float catHitboxWidth = 100;
   float catHitboxHeight = 100;
   float dogHitboxWidth = 110;
   float dogHitboxHeight = 110;
 
   // Determine which character is throwing
-    if (catTurn) {
-        if (isAnimating) {
-            frameCount++;
-            if (frameCount % frameDelay == 0) {
-                catFrameIndex = (catFrameIndex + 1) % catFrames.length; // Cycle through frames
-            }
-            image(catFrames[catFrameIndex], 22, 363, 120, 110); // Draw animated cat
-        } else {
-            image(catImg, 22, 363, 120, 110); // Static frame for the cat
-        }
-        
-        image(dogImg, 810, 420, 150, 150); // Static dog image
+  if (catTurn) {
+    if (isAnimating) {
+      frameCount++;
+      if (frameCount % frameDelay == 0) {
+        catFrameIndex = (catFrameIndex + 1) % catFrames.length; // Cycle through frames
+      }
+      image(catFrames[catFrameIndex], 22, 363, 120, 110); // Draw animated cat
     } else {
-        if (isAnimating) {
-            frameCount++;
-            if (frameCount % frameDelay == 0) {
-                dogFrameIndex = (dogFrameIndex + 1) % dogFrames.length; // Cycle through frames
-            }
-            image(dogFrames[dogFrameIndex], 810, 420, 150, 150); // Draw animated dog
-        } else {
-            image(dogImg, 810, 420, 150, 150); // Static frame for the dog
-        }
-
-        image(catImg, 22, 363, 120, 110); // Static cat image
+      image(catImg, 22, 363, 120, 110); // Static frame for the cat
     }
+
+    image(dogImg, 810, 420, 150, 150); // Static dog image
+  } else {
+    if (isAnimating) {
+      frameCount++;
+      if (frameCount % frameDelay == 0) {
+        dogFrameIndex = (dogFrameIndex + 1) % dogFrames.length; // Cycle through frames
+      }
+      image(dogFrames[dogFrameIndex], 810, 420, 150, 150); // Draw animated dog
+    } else {
+      image(dogImg, 810, 420, 150, 150); // Static frame for the dog
+    }
+
+    image(catImg, 22, 363, 120, 110); // Static cat image
+  }
 
 
   // Health bars and other UI elements remain unchanged
@@ -339,18 +358,33 @@ void drawTwoPlayerScreen() {
 
   // Handle game over situation
   if (catHealth <= 0 || dogHealth <= 0) {
-    fill(0, 200);
-    rect(0, 0, width, height);
-    fill(255);
-    textSize(48);
-    textAlign(CENTER, CENTER);
-    if (catHealth <= 0) {
-      text("🐶 Dog Wins!", width / 2, height / 2);
-    } else {
-      text("🐱 Cat Wins!", width / 2, height / 2);
-    }
-    noLoop(); // Stop the game
-  }
+  showGameOver = true;
+  winnerText = (catHealth <= 0) ? "🐶 Dog Wins!" : "🐱 Cat Wins!";
+  noLoop();
+}
+
+if (showGameOver) {
+  fill(0, 200);
+  rect(0, 0, width, height);
+
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(48);
+  text(winnerText, width / 2, height / 2 - 100);
+
+  // Restart button
+  fill(100, 200, 100);
+  rect(width / 2 - 100, height / 2, 200, 50);
+  fill(0);
+  textSize(24);
+  text("Restart", width / 2, height / 2 + 25);
+
+  // Main Menu button
+  fill(200, 100, 100);
+  rect(width / 2 - 100, height / 2 + 70, 200, 50);
+  fill(0);
+  text("Main Menu", width / 2, height / 2 + 95);
+}
 
   // Display projectile
   if (currentProjectile != null) {
@@ -358,13 +392,24 @@ void drawTwoPlayerScreen() {
     currentProjectile.display();
   }
 
-  // Display icons
-  for (int i = 0; i < 4; i++) {
-    image(icons[i], 30 + i * 90, 80, 80, 80);
+  // Define positions for ability icons
+  int iconWidth = 60;
+  int iconHeight = 60;
+
+  // Draw ability icons for the cat (only Double Damage and Heal)
+  for (int i = 0; i < 2; i++) { // Change to 2 to reflect only two abilities now
+    if (catAbilities[i]) { // Only draw if the ability is active
+      image(icons[i], 40 + i * 80, 70, 60, 60); // Draw the ability icon
+    }
   }
-  for (int i = 4; i < 8; i++) {
-    image(icons[i], 1040 - (8 - i) * 90 - 50, 80, 80, 80);
+
+  // Draw ability icons for the dog (only Double Damage and Heal)
+  for (int i = 0; i < 2; i++) { // Change to 2
+    if (dogAbilities[i]) { // Only draw if the ability is active
+      image(icons[i + 4], width - 120 - i * 80, 70, 60, 60); // Draw the ability icon
+    }
   }
+
 
   // Power gauge above current character
   float px, py;
@@ -401,6 +446,24 @@ void drawOnePlayerScreen() {
   text("🐶 One Player Game Screen", width / 2, height / 2);
 }
 
+void resetGameState() {
+  catHealth = 100;
+  dogHealth = 100;
+  catTurn = true;
+  power = 0;
+  chargingPower = false;
+  isAnimating = false;
+  currentProjectile = null;
+  frameCount = 0;
+  catFrameIndex = 0;
+  dogFrameIndex = 0;
+  showGameOver = false;
+  winnerText = "";
+
+  for (int i = 0; i < catAbilities.length; i++) catAbilities[i] = true;
+  for (int i = 0; i < dogAbilities.length; i++) dogAbilities[i] = true;
+}
+
 void mousePressed() {
   if (state.equals("menu")) {
     int buttonWidth = 150;
@@ -413,7 +476,9 @@ void mousePressed() {
 
     if (mouseX >= startX && mouseX <= startX + buttonWidth &&
       mouseY >= y && mouseY <= y + buttonHeight) {
+      resetGameState();
       state = "mode-select";
+      loop();
     }
 
     if (mouseX >= exitX && mouseX <= exitX + buttonWidth &&
@@ -422,14 +487,39 @@ void mousePressed() {
     }
   }
 
-  // Restart on click if game over
-  if ((catHealth <= 0 || dogHealth <= 0) && state.equals("twoplayer")) {
-    catHealth = 100;
-    dogHealth = 100;
-    catTurn = true;
-    wind = random(-1, 1);
-    loop(); // Resume game
-    return;
+  if (showGameOver) {
+    // Restart button
+    if (mouseX > width / 2 - 100 && mouseX < width / 2 + 100 &&
+        mouseY > height / 2 && mouseY < height / 2 + 50) {
+      restartGame();
+    }
+    // Main Menu button
+    else if (mouseX > width / 2 - 100 && mouseX < width / 2 + 100 &&
+             mouseY > height / 2 + 70 && mouseY < height / 2 + 120) {
+      state = "menu";
+      resetGameState();
+      loop(); // Resume draw loop if paused
+    }
+  }
+
+  if (state.equals("twoplayer")) {
+
+    // Check if it's the cat's turn and handle cat abilities
+    if (catTurn) {
+      for (int i = 0; i < 4; i++) {
+        if (mouseX >= 40 + i * 80 && mouseX <= 40 + i * 80 + 60 &&
+          mouseY >= 70 && mouseY <= 70 + 60) {
+          activateCatAbility(i); // Activate the ability for the cat
+        }
+      }
+    } else { // If it's the dog's turn, check dog's abilities
+      for (int i = 0; i < 4; i++) {
+        if (mouseX >= width - 120 - i * 80 && mouseX <= width - 120 - i * 80 + 60 &&
+          mouseY >= 70 && mouseY <= 70 + 60) {
+          activateDogAbility(i); // Activate the ability for the dog
+        }
+      }
+    }
   }
 
   if (state.equals("mode-select")) {
@@ -444,6 +534,8 @@ void mousePressed() {
     if (mouseX >= catX && mouseX <= catX + catW &&
       mouseY >= catY && mouseY <= catY + catH) {
       state = "twoplayer";
+      tutorialStartTime = millis();
+      showTutorial = true;
     }
   }
 }
@@ -477,6 +569,60 @@ void nextTurn() {
   catTurn = !catTurn;
   wind = random(-1, 1);
 
-  // Reset animation state for the next turn
+  // Reset ability states
   isAnimating = false;
+  catDamageMultiplier = 1; // Reset multiplier for cat
+  dogDamageMultiplier = 1; // Reset multiplier for dog
+}
+
+void restartGame() {
+  catHealth = 100;
+  dogHealth = 100;
+  catTurn = true;
+  power = 0;
+  chargingPower = false;
+  isAnimating = false;
+  currentProjectile = null;
+  frameCount = 0;
+  catFrameIndex = 0;
+  dogFrameIndex = 0;
+  showGameOver = false;
+
+  // Reset abilities if necessary
+  for (int i = 0; i < catAbilities.length; i++) catAbilities[i] = true;
+  for (int i = 0; i < dogAbilities.length; i++) dogAbilities[i] = true;
+
+  loop(); // Resume draw loop
+}
+
+void activateCatAbility(int abilityIndex) {
+  if (catAbilities[abilityIndex]) {
+    switch (abilityIndex) {
+    case 0: // Double Damage
+      catDamageMultiplier = 2; // Double the damage for next hit
+      catAbilities[abilityIndex] = false; // Disable this ability
+      break;
+    case 1: // Heal
+      catHealth = 100; // Heal the cat back to full health
+      catAbilities[abilityIndex] = false; // Disable this ability
+      nextTurn(); //Skip turn
+      break;
+    }
+  }
+}
+
+void activateDogAbility(int abilityIndex) {
+  if (dogAbilities[abilityIndex]) {
+    switch (abilityIndex) {
+    case 0: // Double Damage
+      dogDamageMultiplier = 2; // Double the damage for next hit
+      dogAbilities[abilityIndex] = false; // Disable this ability
+      break;
+    case 1: // Heal
+      dogHealth = 100; // Heal the dog back to full health
+      dogAbilities[abilityIndex] = false; // Disable this ability
+      nextTurn(); //Skip turn
+      break;
+    }
+  }
 }
